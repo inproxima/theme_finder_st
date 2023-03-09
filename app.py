@@ -5,22 +5,22 @@ import streamlit_ext as ste
 
 
 def get_summary( prompt, text):
-        response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=prompt,
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=prompt,
             temperature=0.0,
             max_tokens=2000,
             top_p=1,
             frequency_penalty=0,
             presence_penalty=0
         )
-        return response.choices[0].text
+        return response.choices[0].message.content
 
 def get_ideas(prompt, output):
         # Use OpenAI's GPT-3 model to generate a summary of the text
-        themes = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=prompt_ideas,
+        themes = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=prompt,
             max_tokens=300,
             temperature=0.5,
             top_p=1,
@@ -28,12 +28,12 @@ def get_ideas(prompt, output):
             presence_penalty=0
         )
 
-        return themes.choices[0].text
+        return themes.choices[0].message.content
 def get_themes(prompt, output):
         # Use OpenAI's GPT-3 model to generate a summary of the text
-        themes = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=prompt_themes,
+        themes = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=prompt,
             max_tokens=300,
             temperature=0.5,
             top_p=1,
@@ -41,7 +41,7 @@ def get_themes(prompt, output):
             presence_penalty=0
         )
 
-        return themes.choices[0].text
+        return themes.choices[0].message.content
 
 
 #strealit frontend
@@ -78,16 +78,25 @@ if st.button("Find!"):
             chunks = textwrap.wrap(docx_file, 6000)
             result = ''
             for chunk in chunks:
-                prompt1 = (f"Write a detailed summary of the following TEXT. TEXT:\n{chunk}\n")
+                prompt1 = [
+                 {"role": "system", "content": "You are are summarizer bot. Provide a detailed summary of the content given to you."}, 
+                    {"role": "user", "content": f"Write a detailed summary of the following TEXT. TEXT:\n{chunk}\n"}
+                 ]
                 summary_large = get_summary(prompt1, chunk)
                 result = result + ' ' + summary_large
             output = output + result
-            prompt_ideas = (f"List the {themes} main ideas presented in the DATA, highlighting the central arguments, and supporting evidence. DATA: {output}")
+            prompt_ideas = [
+                 {"role": "system", "content": "You are are a bot that finds the main ideas in a given text."}, 
+                    {"role": "user", "content": f"List the {themes} main ideas presented in the DATA, highlighting the central arguments, and supporting evidence. DATA: {output}"}
+                 ]
             output_ideas = get_ideas(prompt_ideas, output)
             st.write(output_ideas)
             ste.download_button('Download ideas', output_ideas, "main_ideas.txt")
             st.markdown("""---""")
-            prompt_themes = (f"Analyze the DATA identify {themes} recurring themes and patterns that could be used to categorize and describe the DATA. DATA: {output}")
+            prompt_themes = [
+                 {"role": "system", "content": "You are are a bot that finds the main themes in a given text."}, 
+                    {"role": "user", "content": f"Analyze the DATA identify {themes} recurring themes and patterns that could be used to categorize and describe the DATA. DATA: {output}"}
+                 ]
             output_themes = get_themes(prompt_themes, output)
             st.write(output_themes)
             ste.download_button('Download themes', output_themes, "themes.txt")
